@@ -1,0 +1,47 @@
+#+title: Raspberry Pi Setup Instructions
+#+date: 2024-01-22
+#+author: rms
+#+email: rmsteele@sei.cmu.edu
+
+1) Before powering on your Raspberry Pi, install the camera module according to
+   the [[https://www.raspberrypi.com/documentation/accessories/camera.html][Raspberry Pi Camera Module Documentation]]. For future reference, we are
+   using version 3 of the camera module.
+2) With the camera module attached, install the Raspberry Pi 5 into the case
+   according to the assembly instructions contained within the
+   [[https://datasheets.raspberrypi.com/case/case-for-raspberry-pi-5-product-brief.pdf?_gl=1*m0zxeo*_ga*NTIyMDczODMwLjE3MDUwOTQyOTc.*_ga_22FD70LWDS*MTcwNTk0MjYzMy4xLjEuMTcwNTk0MzkzMy4wLjAuMA..][Case for Raspberry Pi 5 Product Brief]]. Instructions are listed on page 4 of
+   the pdf document.
+3) With the Raspberry Pi 5 and attached Camera Module v3 installed in the case,
+   follow the [[https://www.raspberrypi.com/documentation/computers/getting-started.html][Getting Started]] instructions. These instructions take you through
+   the process of imaging a microSD card with PiOS for the Raspberry Pi 5,
+   attaching peripherals, configuring the wireless network connection, and
+   powering on the Raspberry Pi 5 for the first time.
+4) Syncronize with the software repositories to install up-to-date packages for
+   PiOS:
+   #+BEGIN_EXAMPLE
+   rms@raspberrypi:~ $ sudo apt update && sudo apt upgrade -y
+   #+END_EXAMPLE
+5) Install a text editor of your choice like [[https://code.visualstudio.com/docs/setup/raspberry-pi][Visual Studio Code]], Emacs, etc.
+   #+BEGIN_EXAMPLE
+   rms@raspberrypi:~ $ sudo apt install -y <??>   # code, emacs, vim, nano, ...
+   #+END_EXAMPLE
+6) Install the NumPy and OpenCV modules for Python3.
+   #+BEGIN_EXAMPLE
+   rms@raspberrypi:~ $ sudo apt install -y python3-numpy python3-opencv
+   #+END_EXAMPLE
+   Note we did not install these modules using 'pip install' since compatible
+   packages for the Raspberry Pi platform have already been provided by the
+   PiOS software repositories.
+7) Install ONNX modules for Python3.
+   #+BEGIN_EXAMPLE
+   rms@raspberrypi:~ $ pip install --user onnx onnxruntime
+   #+END_EXAMPLE
+   Note we used 'pip install' since the PiOS repositories don't offer both
+   modules as packages. We try to use the PiOS package manager as much as
+   possible.
+8) Test the cameara module functionality from the terminal.
+   #+BEGIN_EXAMPLE
+   rms@raspberrypi:~ $ libcamera-hello
+   #+END_EXAMPLE
+   If installed correctly, a preview window should appear displaying what the
+   camera module sees. Note: For this paticular utility application, the
+   window resolution does not match the sensor resolution (4608 x 2592 pixels).
