@@ -4,6 +4,16 @@ import onnx
 import onnxruntime as ort
 import time
 
+# COCO class names
+coco_file = open('../model/coco.names','r')
+coco_names = []
+while True:
+    class_name = coco_file.readline().strip()
+    if not class_name:
+        break
+    coco_names.append(class_name)
+coco_file.close()
+
 # letterbox procedure
 def letterbox(src, dest_shape):
     # get src dims
@@ -59,7 +69,28 @@ def proc_results(res):
         out_scores.append(scores[tuple(idx)])
         idx1 = (idx[0], idx[2])
         out_boxes.append(boxes[idx1])
-    return (out_boxes, out_scores, out_classes)
+    return list(zip(out_boxes, out_scores, out_classes))
+
+# draw_annos procedure
+def draw_annos(src, annos):
+    dest = np.copy(src)
+    print(f'>>> annos\n{annos}')
+    green = (0, 255, 0)
+    black = (0, 0, 0)
+    face = cv2.FONT_HERSHEY_TRIPLEX
+    scale = 0.5
+    thickness = 1
+    for anno in annos:
+        pt1 = (int(anno[0][0]), int(anno[0][1]))
+        pt2 = (int(anno[0][2]), int(anno[0][3]))
+        text = f'{coco_names[anno[2]]}: {anno[1]:6.4f}'
+        (w, h), _ = cv2.getTextSize(text, face, scale, thickness)
+        pt3 = (pt1[0], int(pt1[1] - h))
+        pt4 = (int(pt1[0] + w), pt1[1])
+        dest = cv2.rectangle(src, pt1, pt2, green)
+        dest = cv2.rectangle(dest, pt3, pt4, green, cv2.FILLED)
+        dest = cv2.putText(dest, text, pt1, face, scale, black, thickness)
+    return dest
 
 # cons ONNX Tiny YOLOv3 NN model
 onnx_model_path = '../model/yolov3-tiny.onnx'
@@ -86,14 +117,10 @@ res = infer_sess.run(None, {'input_1': arr4, 'image_shape': dim4})
 
 # process results to make list of annotations
 annos = proc_results(res)
-print(f'>>> boxes\n{annos[0]}')
-print(f'>>> scores\n{annos[1]}')
-print(f'>>> classes\n{annos[2]}')
 
 # draw list of annotations on letterboxed image
-# arr5 = draw_annotations(annos, arr1)
+arr5 = draw_annos(arr1, annos)
 
 # show annotated image
-# cv2.imshow(wnd_name, arr5)
-cv2.imshow(wnd_name, arr1)
+cv2.imshow(wnd_name, arr5)
 time.sleep(5)
