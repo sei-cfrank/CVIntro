@@ -1,4 +1,3 @@
-from libcamera import Transform
 from picamera2 import Picamera2
 
 import cv2
@@ -11,8 +10,9 @@ def letterbox(src, dest_shape):
     src_height = src.shape[0]   # NOTE: rows => height; cols => width
 
     # cons dest array (filled with gray), get dest dims
-    # NOTE: each 32-bit RGBA pixel value is 0x80808080, alpha is ignored 
+    # NOTE: each 32-bit [B, G, R, A] pixel value is [128, 128, 128, 255]
     dest = np.full(dest_shape, np.uint8(128))
+    dest[:, :, 3] = np.uint8(255)
     dest_width = dest.shape[1]
     dest_height = dest.shape[0]
 
@@ -42,16 +42,14 @@ def letterbox(src, dest_shape):
     # letterboxing complete, return dest
     return dest
 
-
 # instantiate camera instance
 picam2 = Picamera2()
 
-# create a config with desired attributes: format, size, framerate, transform
+# create a config with desired attributes: format, size, framerate
 # NOTE: camera resolution 3280x2464, downsamples at 820x616, crops at 640x480
 config = picam2.create_preview_configuration(
     main={'format': 'XRGB8888', 'size': (820, 616)},
-    controls={'FrameDurationLimits': (16667, 16667)},
-    transform=Transform(hflip=True))
+    controls={'FrameDurationLimits': (16667, 16667)})
 
 # set camera configuration, start camera
 picam2.configure(config)
@@ -59,13 +57,28 @@ picam2.start()
 
 # start opencv window thread
 cv2.startWindowThread()
+wnd_name = 'foo'
+cv2.namedWindow(wnd_name, cv2.WINDOW_AUTOSIZE)
 
 while True:
     # get current image data from 'main' camera stream
     arr1 = picam2.capture_array('main')
 
-    # letterbox the image to resize for NN input 
-    arr2 = letterbox(arr1, (512, 512, 4))
+    # letterbox the image to resize for NN input (size: (height, width, chan))
+    arr2 = letterbox(arr1, (416, 416, 4))
 
-    # show resized image
-    cv2.imshow('foo', arr2)
+    # cons packed input buffer for ONNX model inference
+    # arr3 = pack_buffer(arr2)
+
+    # run ONNX model inference on input buffer to get results
+    # res = infer(arr3, dim3)
+
+    # process results to make list of annotations
+    # annos = proc_results(res)
+
+    # draw list of annotations on letterboxed image
+    # arr4 = draw_annos(annos, arr2)
+
+    # show annotated image
+    # cv2.imshow(wnd_name, arr4)
+    cv2.imshow(wnd_name, arr2)
