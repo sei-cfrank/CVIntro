@@ -1,4 +1,3 @@
-from libcamera import Transform
 from picamera2 import Picamera2
 
 import cv2
@@ -45,27 +44,23 @@ def letterbox(src, dest_shape):
 
 # pack_buffer procedure, ONNX model expects normalized float32 NCHW tensor
 def pack_buffer(src):
-    width = src.shape[1]
-    height = src.shape[0]
-    chan = src.shape[2]
-    dest_shape = (chan - 1, height, width)      # cons dest array shape
     dest = np.array(src, dtype='float32')       # cons dest array via copy
+    dest = dest[:, :, :3]                       # remove alpha channel
+    dest = dest[..., ::-1]                      # reorder channels: BGR -> RGB
     dest /= 255.0                               # normalize vals
     dest = np.transpose(dest, [2, 0, 1])        # make channel first dim
-    dest = np.resize(dest, dest_shape)          # remove alpha channel
     dest = np.expand_dims(dest, 0)              # ins batch dim before chan dim
     return dest
 
 # instantiate camera instance
 picam2 = Picamera2()
 
-# create a config with desired attributes: format, size, framerate, transform
+# create a config with desired attributes: format, size, framerate
 # NOTE: camera resolution 3280x2464, downsamples at 820x616, crops at 640x480
 # NOTE: XRGB8888 => shape: (height, width, 4); pixel value: [B, G, R, A]
 config = picam2.create_preview_configuration(
     main={'format': 'XRGB8888', 'size': (820, 616)},
-    controls={'FrameDurationLimits': (16667, 16667)},
-    transform=Transform(hflip=True))
+    controls={'FrameDurationLimits': (16667, 16667)})
 
 # set camera configuration, start camera
 picam2.configure(config)
@@ -79,27 +74,23 @@ cv2.namedWindow(wnd_name, cv2.WINDOW_AUTOSIZE)
 while True:
     # get current image data from 'main' camera stream
     arr1 = picam2.capture_array('main')
-    fps = 1000000 / picam2.capture_metadata()['FrameDuration']
 
     # letterbox the image to resize for NN input (size: (height, width, chan))
     arr2 = letterbox(arr1, (416, 416, 4))
 
-    # cons input for ONNX model (packed buffer and orig buffer dim)
+    # cons packed input buffer for ONNX model inference
     arr3 = pack_buffer(arr2)
-    dim3 = np.array([arr1.shape[1],arr1.shape[0]],dtype='float32').reshape(1,2)
+    dim3 = np.array([arr2.shape[1],arr2.shape[0]],dtype=np.float32).reshape(1,2)
 
-    # run inference on input buffer to get results
-    # results = infer(arr3)
+    # run ONNX model inference on input buffer to get results
+    # res = infer(arr3, dim3)
 
     # process results to make list of annotations
-    # annos = proc_results(results)
-    
+    # annos = proc_results(res)
+
     # draw list of annotations on letterboxed image
-    # arr4 = draw_annotations(annos, arr2)
-    
+    # arr4 = draw_annos(annos, arr2)
+
     # show annotated image
     # cv2.imshow(wnd_name, arr4)
-    cv2.imshow(wnd_name, arr1)
-
-    # show FPS in window title
-    cv2.setWindowTitle(wnd_name, f'FPS: {fps:5.2f}')
+    cv2.imshow(wnd_name, arr2)

@@ -1,14 +1,24 @@
-from libcamera import Transform
 from picamera2 import Picamera2
-# from onnx2torch import convert
 
 import cv2
 import numpy as np
+import onnx
+import onnxruntime as ort
+
+# COCO class names
+coco_file = open('../model/coco.names','r')
+coco_names = []
+while True:
+    class_name = coco_file.readline().strip()
+    if not class_name:
+        break
+    coco_names.append(class_name)
+coco_file.close()
 
 # letterbox procedure
 def letterbox(src, dest_shape):
     # get src dims
-    src_width = src.shape[1]    # img.shape returns tuple (rows, cols, chan)
+    src_width = src.shape[1]    # array.shape returns (rows, cols, chan)
     src_height = src.shape[0]   # NOTE: rows => height; cols => width
 
     # cons dest array (filled with gray), get dest dims
@@ -46,31 +56,58 @@ def letterbox(src, dest_shape):
 
 # pack_buffer procedure, ONNX model expects normalized float32 NCHW tensor
 def pack_buffer(src):
-    width = src.shape[1]
-    height = src.shape[0]
-    chan = src.shape[2]
-    dest_shape = (chan - 1, height, width)      # cons dest array shape
     dest = np.array(src, dtype='float32')       # cons dest array via copy
+    dest = dest[:, :, :3]                       # remove alpha channel
+    dest = dest[..., ::-1]                      # reorder channels: BGR -> RGB
     dest /= 255.0                               # normalize vals
     dest = np.transpose(dest, [2, 0, 1])        # make channel first dim
-    dest = np.resize(dest, dest_shape)          # remove alpha channel
     dest = np.expand_dims(dest, 0)              # ins batch dim before chan dim
     return dest
 
 # proc_results procedure
 def proc_results(res):
-    pass
+    [boxes, scores, indices] = res
+    out_boxes, out_scores, out_classes = [], [], []
+    for idx in indices[0]:
+        out_classes.append(idx[1])
+        out_scores.append(scores[tuple(idx)])
+        idx1 = (idx[0], idx[2])
+        out_boxes.append(boxes[idx1])
+    return list(zip(out_boxes, out_scores, out_classes))
+
+# draw_annos procedure
+def draw_annos(src, annos):
+    dest = np.copy(src)
+    green = (0, 255, 0)
+    black = (0, 0, 0)
+    face = cv2.FONT_HERSHEY_SIMPLEX
+    scale = 0.25
+    thickness = 1
+    for anno in annos:
+        pt1 = (int(anno[0][1]), int(anno[0][0]))
+        pt2 = (int(anno[0][3]), int(anno[0][2]))
+        text = f'{coco_names[anno[2]]}: {anno[1]:.2f}'
+        (w, h), _ = cv2.getTextSize(text, face, scale, thickness)
+        pt3 = (pt1[0], int(pt1[1] - h))
+        pt4 = (int(pt1[0] + w), pt1[1])
+        dest = cv2.rectangle(src, pt1, pt2, green)
+        dest = cv2.rectangle(dest, pt3, pt4, green, cv2.FILLED)
+        dest = cv2.putText(dest, text, pt1, face, scale, black, thickness)
+    return dest
+
+# cons ONNX Tiny YOLOv3 NN model
+onnx_model_path = '../model/yolov3-tiny.onnx'
+infer_sess = ort.InferenceSession(onnx_model_path)
 
 # instantiate camera instance
 picam2 = Picamera2()
 
-# create a config with desired attributes: format, size, framerate, transform
+# create a config with desired attributes: format, size, framerate
 # NOTE: camera resolution 3280x2464, downsamples at 820x616, crops at 640x480
 # NOTE: XRGB8888 => shape: (height, width, 4); pixel value: [B, G, R, A]
 config = picam2.create_preview_configuration(
     main={'format': 'XRGB8888', 'size': (820, 616)},
-    controls={'FrameDurationLimits': (16667, 16667)},
-    transform=Transform(hflip=True))
+    controls={'FrameDurationLimits': (16667, 16667)})
 
 # set camera configuration, start camera
 picam2.configure(config)
@@ -81,31 +118,25 @@ cv2.startWindowThread()
 wnd_name = 'foo'
 cv2.namedWindow(wnd_name, cv2.WINDOW_AUTOSIZE)
 
-# TODO: cons ONNX Tiny YOLOv3 NN model
-
 while True:
     # get current image data from 'main' camera stream
     arr1 = picam2.capture_array('main')
-    fps = 1000000 / picam2.capture_metadata()['FrameDuration']
 
     # letterbox the image to resize for NN input (size: (height, width, chan))
     arr2 = letterbox(arr1, (416, 416, 4))
 
-    # cons packed input buffer for PyTorch model inference
+    # cons packed input buffer and dims for ONNX model inference
     arr3 = pack_buffer(arr2)
+    dim3 = np.array([arr2.shape[1],arr2.shape[0]],dtype=np.float32).reshape(1,2)
 
     # run ONNX model inference on input buffer to get results
-    # res = infer(arr3)
+    res = infer_sess.run(None, {'input_1': arr3, 'image_shape': dim3})
 
     # process results to make list of annotations
-    # annos = proc_results(res)
+    annos = proc_results(res)
 
     # draw list of annotations on letterboxed image
-    # arr4 = draw_annotations(annos, arr1)
+    arr4 = draw_annos(arr2, annos)
 
     # show annotated image
-    # cv2.imshow(wnd_name, arr4)
-    cv2.imshow(wnd_name, arr1)
-
-    # show FPS in window title
-    cv2.setWindowTitle(wnd_name, f'FPS: {fps:5.2f}')
+    cv2.imshow(wnd_name, arr4)
