@@ -50,9 +50,10 @@ def letterbox(src, dest_shape):
     dx = int((dest_width - rsz_width) / 2)          # NOTE: integer truncation
     dy = int((dest_height - rsz_height) / 2)
     dest[dy:dy+rsz_height, dx:dx+rsz_width, :] = rsz
+    rsz_origin = (dx, dy)
 
-    # letterboxing complete, return dest
-    return dest
+    # letterboxing complete, return (dest, rsz_origin, rsz_dims)
+    return (dest, rsz_origin, rsz_dims)
 
 # pack_buffer procedure, ONNX model expects normalized float32 NCHW tensor
 def pack_buffer(src):
@@ -75,7 +76,7 @@ def proc_results(res):
         out_boxes.append(boxes[idx1])
     return list(zip(out_boxes, out_scores, out_classes))
 
-# draw_annos procedure
+# draw_annos procedure (fixed ONNX anno scaling in unscale_annos proc)
 def draw_annos(src, annos):
     dest = np.copy(src)
     green = (0, 255, 0)
@@ -84,16 +85,32 @@ def draw_annos(src, annos):
     scale = 0.35
     thickness = 1
     for anno in annos:
-        pt1 = (int(anno[0][1]), int(anno[0][0]))
-        pt2 = (int(anno[0][3]), int(anno[0][2]))
+        pt1 = (anno[0][0], anno[0][1])
+        pt2 = (anno[0][2], anno[0][3])
         text = f'{coco_names[anno[2]]}: {anno[1]:.2f}'
         (w, h), _ = cv2.getTextSize(text, face, scale, thickness)
-        pt3 = (pt1[0], int(pt1[1] - h))
-        pt4 = (int(pt1[0] + w), pt1[1])
+        pt3 = (pt1[0], pt1[1] - h)
+        pt4 = (pt1[0] + w, pt1[1])
         dest = cv2.rectangle(src, pt1, pt2, green)
         dest = cv2.rectangle(dest, pt3, pt4, green, cv2.FILLED)
         dest = cv2.putText(dest, text, pt1, face, scale, black, thickness)
     return dest
+
+# unscale_annos procedure (fixes ONNX anno scaling)
+def unscale_annos(annos, dw, dh, w0, h0, w1, h1):
+    res = []
+    scale_w = float(w1) / float(w0)
+    scale_h = float(h1) / float(h0)
+    for anno in annos:
+        pt1 = (int(anno[0][1]), int(anno[0][0]))   # ONNX bug! Points are
+        pt2 = (int(anno[0][3]), int(anno[0][2]))   # transposed.
+        pt3 = (pt1[0] - dw, pt1[1] - dh)
+        pt4 = (pt2[0] - dw, pt2[1] - dh)
+        pt5 = (int(float(pt3[0]) * scale_w), int(float(pt3[1]) * scale_h))
+        pt6 = (int(float(pt4[0]) * scale_w), int(float(pt4[1]) * scale_h))
+        arr1 = np.array([pt5[0], pt5[1], pt6[0], pt6[1]], dtype='int32')
+        res.append((arr1, anno[1], anno[2]))
+    return res
 
 # cons ONNX Tiny YOLOv3 NN model
 onnx_model_path = '../model/yolov3-tiny.onnx'
@@ -121,9 +138,10 @@ cv2.namedWindow(wnd_name, cv2.WINDOW_AUTOSIZE)
 while True:
     # get current image data from 'main' camera stream
     arr1 = picam2.capture_array('main')
+    (h1, w1, c1) = arr1.shape
 
     # letterbox the image to resize for NN input (size: (height, width, chan))
-    arr2 = letterbox(arr1, (416, 416, 4))
+    (arr2, (dw, dh), (w0, h0)) = letterbox(arr1, (416, 416, 4))
 
     # cons packed input buffer and dims for ONNX model inference
     arr3 = pack_buffer(arr2)
@@ -135,8 +153,11 @@ while True:
     # process results to make list of annotations
     annos = proc_results(res)
 
+    # unscale annotations to draw in original image frame
+    unscaled = unscale_annos(annos, dw, dh, w0, h0, w1, h1)
+
     # draw list of annotations on letterboxed image
-    arr4 = draw_annos(arr2, annos)
+    arr4 = draw_annos(arr1, unscaled)
 
     # show annotated image
     cv2.imshow(wnd_name, arr4)

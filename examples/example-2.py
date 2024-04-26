@@ -6,11 +6,11 @@ import cv2
 picam2 = Picamera2()
 
 # create a config with desired attributes: format, size, framerate
-# NOTE: camera resolution 4608x2464, downsamples at 2304x1296 (56.03 fps)
+# NOTE: camera resolution 4608x2464, downsamples at 1536x864 (120.13 fps)
 # NOTE: XRGB8888 => shape: (height, width, 4); pixel value: [B, G, R, A]
 config = picam2.create_preview_configuration(
-    main={'format': 'XRGB8888', 'size': (2304, 1296)},
-    controls={'FrameDurationLimits': (17847, 17847)})
+    main={'format': 'XRGB8888', 'size': (1536, 864)},
+    controls={'FrameDurationLimits': (8333, 8333)})
 
 # set camera configuration, start camera
 picam2.configure(config)
