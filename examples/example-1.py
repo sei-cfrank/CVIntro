@@ -5,9 +5,11 @@ import time
 picam2 = Picamera2()
 
 # create a config with desired attributes: format, size, framerate
+# NOTE: camera resolution 4608x2464, downsamples at 1536x864 (120.13 fps)
+# NOTE: XRGB8888 => shape: (height, width, 4); pixel value: [B, G, R, A]
 config = picam2.create_preview_configuration(
-    main={'format': 'XBGR8888', 'size': (1640, 1232)},
-    controls={'FrameDurationLimits': (16667, 16667)})
+    main={'format': 'XRGB8888', 'size': (1536, 864)},
+    controls={'FrameDurationLimits': (8333, 8333)})
 
 # set camera configuration, print config to show results
 picam2.configure(config)

@@ -6,10 +6,11 @@ import cv2
 picam2 = Picamera2()
 
 # create a config with desired attributes: format, size, framerate
-# NOTE: camera resolution 3280x2464, downsamples at 820x616, crops at 640x480
+# NOTE: camera resolution 4608x2464, downsamples at 1536x864 (120.13 fps)
+# NOTE: XRGB8888 => shape: (height, width, 4); pixel value: [B, G, R, A]
 config = picam2.create_preview_configuration(
-    main={'format': 'XRGB8888', 'size': (820, 616)},
-    controls={'FrameDurationLimits': (16667, 16667)})
+    main={'format': 'XRGB8888', 'size': (1536, 864)},
+    controls={'FrameDurationLimits': (8333, 8333)})
 
 # set camera configuration, start camera
 picam2.configure(config)
@@ -29,3 +30,4 @@ while True:
 
     # show resized image
     cv2.imshow(wnd_name, arr2)
+    cv2.waitKey(1)
