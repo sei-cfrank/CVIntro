@@ -1,15 +1,13 @@
-from libcamera import Transform
 from picamera2 import Picamera2
 import time
 
 # instantiate camera instance
 picam2 = Picamera2()
 
-# create a config with desired attributes: format, size, framerate, transform
+# create a config with desired attributes: format, size, framerate
 config = picam2.create_preview_configuration(
     main={'format': 'XBGR8888', 'size': (1640, 1232)},
-    controls={'FrameDurationLimits': (16667, 16667)},
-    transform=Transform(hflip=True))
+    controls={'FrameDurationLimits': (16667, 16667)})
 
 # set camera configuration, print config to show results
 picam2.configure(config)

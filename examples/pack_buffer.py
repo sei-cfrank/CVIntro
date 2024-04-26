@@ -7,14 +7,11 @@ arr0[:, :, 1] = np.uint8(0)
 
 # pack_buffer procedure, ONNX model expects normalized float32 NCHW tensor
 def pack_buffer(src):
-    width = src.shape[1]
-    height = src.shape[0]
-    chan = src.shape[2]
-    dest_shape = (chan - 1, height, width)      # cons dest array shape
     dest = np.array(src, dtype='float32')       # cons dest array via copy
+    dest = dest[:, :, :3]                       # remove alpha channel
+    dest = dest[..., ::-1]                      # reorder channels: BGR -> RGB
     dest /= 255.0                               # normalize vals
     dest = np.transpose(dest, [2, 0, 1])        # make channel first dim
-    dest = np.resize(dest, dest_shape)          # remove alpha channel
     dest = np.expand_dims(dest, 0)              # ins batch dim before chan dim
     return dest
 
