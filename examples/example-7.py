@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import onnx
 import onnxruntime as ort
+import timeit
 
 # COCO class names
 coco_file = open('../model/coco.names','r')
@@ -134,8 +135,13 @@ picam2.start()
 cv2.startWindowThread()
 wnd_name = 'foo'
 cv2.namedWindow(wnd_name, cv2.WINDOW_AUTOSIZE)
+t0 = timeit.default_timer()
+t1 = timeit.default_timer()
 
 while True:
+    # update old time
+    t0 = t1
+
     # get current image data from 'main' camera stream
     arr1 = picam2.capture_array('main')
     (h1, w1, c1) = arr1.shape
@@ -160,5 +166,8 @@ while True:
     arr4 = draw_annos(arr1, unscaled)
 
     # show annotated image
+    t1 = timeit.default_timer()
+    fps = 1.0 / (t1 - t0)
+    cv2.setWindowTitle(wnd_name, f'FPS: {fps:.1f}')
     cv2.imshow(wnd_name, arr4)
     cv2.waitKey(1)
