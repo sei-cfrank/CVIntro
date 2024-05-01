@@ -44,4 +44,4 @@
    #+END_EXAMPLE
    If installed correctly, a preview window should appear displaying what the
    camera module sees. Note: For this paticular utility application, the
-   window resolution does not match the sensor resolution (4608 x 2592 pixels).
+   window resolution does not match the sensor resolution.
