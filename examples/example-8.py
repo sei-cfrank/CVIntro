@@ -120,11 +120,11 @@ def unscale_annos(annos, dw, dh, w0, h0, w1, h1):
 def sigmoid(x):
     return 1.0/(1.0 + math.exp(-x))
 
-# (redefined) proc_results procedure 
+# (redefined) proc_results procedure
 def proc_results(res, pobj_thresh = 0.1, pcls_thresh = 0.5, orig_img_size = 416,
                  anchors = np.array([[[81,82], [135,169], [344,319]],
                                      [[10,14], [ 23, 27], [ 37, 58]]],
-                                    dtype='int32')): 
+                                    dtype='int32')):
     dets = []
     # candidate detection layout:
     # [x, y, w, h, pobj, pcls_0, pcls_1, ..., pcls_i]
@@ -160,7 +160,7 @@ def proc_results(res, pobj_thresh = 0.1, pcls_thresh = 0.5, orig_img_size = 416,
                                 x2, y2 = x + (w / 2.0), y + (h / 2.0)
                                 dets.append((pobj, pcls, ci, x1, y1, x2, y2))
     return dets
-    
+
 # overlap procedure, find bbox overlap length along a dim
 def overlap(lo1, hi1, lo2, hi2):
     lo = max(lo1, lo2)
@@ -260,4 +260,8 @@ while True:
     fps = 1.0 / (t1 - t0)
     cv2.setWindowTitle(wnd_name, f'FPS: {fps:.1f}')
     cv2.imshow(wnd_name, arr4)
-    cv2.waitKey(1)
+    key = cv2.waitKey(1) & 0xFF
+
+    # breaks out of loop on key stroke 'q'
+    if key == ord('q'):
+        break
