@@ -84,7 +84,7 @@ def draw_annos(src, annos):
     green = (0, 255, 0)
     black = (0, 0, 0)
     face = cv2.FONT_HERSHEY_SIMPLEX
-    scale = 0.35
+    scale = 0.5
     thickness = 1
     for anno in annos:
         pt1 = (anno[0][0], anno[0][1])
@@ -209,11 +209,10 @@ infer_sess = ort.InferenceSession(onnx_model_path)
 picam2 = Picamera2()
 
 # create a config with desired attributes: format, size, framerate
-# NOTE: camera resolution 4608x2464, downsamples at 1536x864 (120.13 fps)
+# NOTE: camera resolution 4608x2464, downsamples at 2304x1296 (56.03 fps)
 # NOTE: XRGB8888 => shape: (height, width, 4); pixel value: [B, G, R, A]
 config = picam2.create_preview_configuration(
-    main={'format': 'XRGB8888', 'size': (1536, 864)},
-    controls={'FrameDurationLimits': (8333, 8333)})
+    main={'format': 'XRGB8888', 'size': (2304, 1296)})  # 16:9 aspect ratio
 
 # set camera configuration, start camera
 picam2.configure(config)
@@ -222,7 +221,8 @@ picam2.start()
 # start opencv window thread
 cv2.startWindowThread()
 wnd_name = 'foo'
-cv2.namedWindow(wnd_name, cv2.WINDOW_AUTOSIZE)
+cv2.namedWindow(wnd_name, cv2.WINDOW_KEEPRATIO)
+cv2.resizeWindow(wnd_name, 1600, 900)                   # 16:9 aspect ratio
 t0 = timeit.default_timer()
 t1 = timeit.default_timer()
 
@@ -252,16 +252,23 @@ while True:
     # unscale annotations to draw in original image frame
     unscaled = unscale_annos(filtered_annos, dw, dh, w0, h0, w1, h1)
 
-    # draw list of annotations on letterboxed image
+    # draw list of annotations on original image
     arr4 = draw_annos(arr1, unscaled)
 
     # show annotated image
     t1 = timeit.default_timer()
     fps = 1.0 / (t1 - t0)
+
+    # if window closed, create new window with correct size
+    if cv2.getWindowProperty(wnd_name, cv2.WND_PROP_AUTOSIZE) == -1:
+        cv2.namedWindow(wnd_name, cv2.WINDOW_KEEPRATIO)
+        cv2.resizeWindow(wnd_name, 1600, 900)           # 16:9 aspect ratio
+
+    # update image in window
     cv2.setWindowTitle(wnd_name, f'FPS: {fps:.1f}')
     cv2.imshow(wnd_name, arr4)
-    key = cv2.waitKey(1) & 0xFF
 
     # breaks out of loop on key stroke 'q'
+    key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
         break
