@@ -259,16 +259,11 @@ while True:
     t1 = timeit.default_timer()
     fps = 1.0 / (t1 - t0)
 
-    # if window closed, create new window with correct size
+    # if window closed, break loop before imshow creates new window
     if cv2.getWindowProperty(wnd_name, cv2.WND_PROP_AUTOSIZE) == -1:
-        cv2.namedWindow(wnd_name, cv2.WINDOW_KEEPRATIO)
-        cv2.resizeWindow(wnd_name, 1600, 900)           # 16:9 aspect ratio
+        break
 
     # update image in window
     cv2.setWindowTitle(wnd_name, f'FPS: {fps:.1f}')
     cv2.imshow(wnd_name, arr4)
-
-    # breaks out of loop on key stroke 'q'
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
-        break
+    cv2.waitKey(1)
