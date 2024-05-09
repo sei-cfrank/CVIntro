@@ -255,7 +255,7 @@ while True:
     # draw list of annotations on original image
     arr4 = draw_annos(arr1, unscaled)
 
-    # show annotated image
+    # update fps timer
     t1 = timeit.default_timer()
     fps = 1.0 / (t1 - t0)
 
@@ -263,7 +263,7 @@ while True:
     if cv2.getWindowProperty(wnd_name, cv2.WND_PROP_AUTOSIZE) == -1:
         break
 
-    # update image in window
+    # show annotated image
     cv2.setWindowTitle(wnd_name, f'FPS: {fps:.1f}')
     cv2.imshow(wnd_name, arr4)
     cv2.waitKey(1)
