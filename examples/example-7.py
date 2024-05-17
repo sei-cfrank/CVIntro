@@ -162,7 +162,7 @@ while True:
     # unscale annotations to draw in original image frame
     unscaled = unscale_annos(annos, dw, dh, w0, h0, w1, h1)
 
-    # draw list of annotations on letterboxed image
+    # draw list of annotations on original image
     arr4 = draw_annos(arr1, unscaled)
 
     # update fps timer
