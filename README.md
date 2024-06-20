@@ -18,7 +18,7 @@ Repo for CMU-SEI AI Division "Hands-On Computer Vision" course
 2. On the command line in the top level of this repo run the follwing three commands
     - `ipython kernel install --user --name=venv`
     - `python -m ipykernel install --user --name=venv`
-    - `python-m bash_kernel.install`
+    - `python -m bash_kernel.install`
 3. Start Jupyter notebook with `jupyter notebook`, a browser window with the Jupyter interface should open
 4. Open a notebook (i.e. a .ipynb file) in that Jupyter browser window
 5. Click on the "Kernel" menu
