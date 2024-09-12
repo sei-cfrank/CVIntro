@@ -1,6 +1,9 @@
 # HandsOnCV
 Repo for CMU-SEI AI Division "Hands-On Computer Vision" course for Gauntlet Delivery (No Pis)
 
+Streamline
+
+
 ## Virtual environment setup from command line
 1. cd into the top level of this repo
 2. Create a virtual environment called "venv" with the command: `python -m venv --system-site-packages venv`
