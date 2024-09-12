@@ -1,5 +1,5 @@
 # HandsOnCV
-Repo for CMU-SEI AI Division "Hands-On Computer Vision" course
+Repo for CMU-SEI AI Division "Hands-On Computer Vision" course for Gauntlet Delivery (No Pis)
 
 ## Virtual environment setup from command line
 1. cd into the top level of this repo
