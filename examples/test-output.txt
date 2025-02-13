@@ -1,8 +1,0 @@
-rms@raspberrypi:~/HandsOnCV/examples $ python test.py
->>> boxes
-[array([231.71437 ,   5.300537, 553.8166  , 493.36084 ], dtype=float32)]
->>> scores
-[0.80276763]
->>> classes
-[14]
-rms@raspberrypi:~/HandsOnCV/examples $
