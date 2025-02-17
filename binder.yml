@@ -1,0 +1,3 @@
+build:
+  engine: repo2docker
+  base_image: jupyter/minimal-notebook
