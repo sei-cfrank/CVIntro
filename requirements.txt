@@ -2,5 +2,6 @@ onnx
 onnxruntime
 numpy
 matplotlib
-opencv-python
+opencv-python-headless
 pillow
+scipy
