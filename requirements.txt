@@ -1,0 +1,6 @@
+onnx
+onnxruntime
+numpy
+matplotlib
+opencv-python
+pillow
