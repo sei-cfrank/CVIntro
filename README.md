@@ -2,10 +2,13 @@
 Repo for CMU-SEI AI Division "Hands-On Computer Vision" course for Gauntlet Delivery (No Pis)
 
 Streamline
-Binder Deliver:
+Binder Delivery:
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sei-cfrank/CVIntro/HEAD)
 
+Google Colab delivery:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sei-cfrank/CVIntro/blob/master/exercises/ExerciseNotebook.ipynb)
 
 ## Virtual environment setup from command line
 1. cd into the top level of this repo
